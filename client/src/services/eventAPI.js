@@ -26,3 +26,24 @@ export const createEvent = async (eventData) => {
     throw err;
   }
 };
+
+export const updateEvent = async (eventId, eventData) => {
+  try {
+    const response = await axiosInstance.put(
+      `/event/update/${eventId}`,
+      eventData,
+    );
+    return response.data;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const deleteEvent = async (eventId) => {
+  try {
+    const response = await axiosInstance.delete(`/event/delete/${eventId}`);
+    return response.data;
+  } catch (err) {
+    throw err;
+  }
+};

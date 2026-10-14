@@ -26,3 +26,21 @@ export const cancelBooking = async (bookingId) => {
     throw err;
   }
 };
+
+export const getAllBookings = async () => {
+  try {
+    const response = await axiosInstance.get("/booking/all");
+    return response;
+  } catch (err) {
+    throw err;
+  }
+};
+
+export const markBookingCheckedIn = async (bookingId) => {
+  try {
+    const response = await axiosInstance.patch(`/booking/update/${bookingId}`);
+    return response.data;
+  } catch (err) {
+    throw err;
+  }
+};

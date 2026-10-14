@@ -3,7 +3,7 @@ import { Event } from "../models/eventModel.js";
 
 export const createEvent = async (req, res) => {
   try {
-    const { name, description, date, time, venue, maxQuantity, bookedSeats } =
+    const { name, description, date, time, venue, maxQuantity } =
       req.body || {};
     const createdBy = req.user.id;
 
@@ -27,7 +27,6 @@ export const createEvent = async (req, res) => {
       time,
       venue,
       maxQuantity,
-      bookedSeats,
       createdBy,
     });
 
@@ -46,10 +45,7 @@ export const createEvent = async (req, res) => {
 
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate(
-      "createdBy",
-      "name email phone",
-    );
+    const events = await Event.find().populate("createdBy", "name email phone");
 
     if (events.length === 0) {
       return res.status(200).json({
@@ -134,9 +130,28 @@ export const updateEvent = async (req, res) => {
       });
     }
 
-    const { name, description, date, time, venue } = req.body || {};
+    const { name, description, date, time, venue, maxQuantity } =
+      req.body || {};
 
-    if (!name && !description && !date && !time && !venue) {
+    if (maxQuantity !== undefined) {
+      const capacity = Number(maxQuantity);
+
+      if (!Number.isInteger(capacity) || capacity < 1) {
+        return res.status(400).json({
+          message: "Maximum capacity must be a positive whole number",
+        });
+      }
+
+      if (capacity < event.bookedSeats) {
+        return res.status(400).json({
+          message: `Capacity cannot be less than already booked seats (${event.bookedSeats})`,
+        });
+      }
+
+      event.maxQuantity = capacity;
+    }
+
+    if (!name && !description && !date && !time && !venue && !maxQuantity) {
       return res.status(200).json({
         message: "You haven't updated anything in this data",
       });
@@ -147,6 +162,7 @@ export const updateEvent = async (req, res) => {
     if (date !== undefined) event.date = date;
     if (time !== undefined) event.time = time;
     if (venue !== undefined) event.venue = venue;
+    if (maxQuantity !== undefined) event.maxQuantity = maxQuantity;
 
     await event.save();
 

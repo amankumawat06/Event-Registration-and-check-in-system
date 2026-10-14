@@ -201,19 +201,7 @@ export const markCheckedIn = async (req, res) => {
       });
     }
 
-    const { status } = req.body;
-
-    const booking = await Booking.findByIdAndUpdate(
-      { _id: id },
-      {
-        $set: {
-          status: status,
-        },
-      },
-      {
-        new: true,
-      },
-    );
+    const booking = await Booking.findById(id);
 
     if (!booking) {
       return res.status(404).json({
@@ -221,12 +209,14 @@ export const markCheckedIn = async (req, res) => {
       });
     }
 
-    if(booking.status === "checked-In"){
+    if (booking.status === "checked-In") {
       return res.status(400).json({
-        message: "Booking has already marked as checked-In"
-      })
+        message: "Booking has already marked as checked-In",
+      });
     }
 
+    booking.status = "checked-In";
+    await booking.save();
 
     return res.status(200).json({
       message: "Booking has marked to checked-In",
