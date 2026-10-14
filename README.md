@@ -56,3 +56,17 @@ Open the local URL displayed in the terminal to access the application.
 - Ensure MongoDB is connected and the `.env` values are configured correctly.
 - Keep the backend port at `7000` and ensure the frontend API URL and backend CORS configuration match.
  
+
+
+
+## Admin Panel Access
+
+To access the admin panel:
+
+1. Create a user account through the application.
+2. Open your MongoDB database using MongoDB Compass or MongoDB Atlas.
+3. Navigate to the `users` collection and find the newly created user.
+4. Update that user's `role` field from `"user"` to `"admin"`.
+5. Save the changes and log in again with that account.
+ 
+
