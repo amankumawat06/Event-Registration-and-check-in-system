@@ -149,7 +149,7 @@ const Bookings = () => {
       <div className="bookings-page-heading">
         <div>
           <p className="bookings-eyebrow">BOOKING MANAGEMENT</p>
-          <h2>Event Bookings</h2>
+          <h2>Manage Bookings</h2>
           <p className="bookings-subtitle">
            </p>
         </div>

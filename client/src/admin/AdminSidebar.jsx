@@ -38,7 +38,7 @@ const AdminSidebar = ({ onLogout }) => {
       <div className="admin-brand">
         <div className="admin-brand-icon">E</div>
         <div>
-          <h2>Evently</h2>
+          <h2>EventHub</h2>
           <p>Admin Panel</p>
         </div>
       </div>

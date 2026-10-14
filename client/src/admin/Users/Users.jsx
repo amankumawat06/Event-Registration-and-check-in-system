@@ -92,7 +92,7 @@ const AdminUsers = () => {
       <div className="adminUsers__header">
         <div>
           <span className="adminUsers__eyebrow"></span>
-          <h1>User Management</h1>
+          <h1>Manage users</h1>
         </div>
 
         <button

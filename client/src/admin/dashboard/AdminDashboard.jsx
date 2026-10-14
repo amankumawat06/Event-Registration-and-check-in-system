@@ -119,8 +119,7 @@ const AdminDashboard = () => {
       <div className="adminDashboard__header">
         <div>
           <span className="adminDashboard__eyebrow">OVERVIEW</span>
-          <h1>Dashboard</h1>
-        </div>
+         </div>
 
         <button
           className="adminDashboard__refresh"
