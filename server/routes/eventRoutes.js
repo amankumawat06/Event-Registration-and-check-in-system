@@ -9,11 +9,24 @@ import {
   updateEvent,
   deleteEvent,
 } from "../controllers/eventController.js";
+import { upload } from "../middlewares/upload.js";
 
-router.post("/create", verifyToken, isAdmin, createEvent);
+router.post(
+  "/create",
+  upload.array("images"),
+  verifyToken,
+  isAdmin,
+  createEvent,
+);
 router.get("/all", getAllEvents);
 router.get("/:id", getEventById);
-router.put("/update/:id", verifyToken, isAdmin, updateEvent);
+router.put(
+  "/update/:id",
+  upload.array("images"),
+  verifyToken,
+  isAdmin,
+  updateEvent,
+);
 router.delete("/delete/:id", verifyToken, isAdmin, deleteEvent);
 
 export default router;

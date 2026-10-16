@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     match: /^\d{10}$/,
-    mminlength: 10,
+    minlength: 10,
     maxlength: 10,
   },
   password: {
@@ -26,6 +26,18 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 5,
   },
+  image: [
+    {
+      imageUrl: {
+        type: String,
+        default: "avaitor.png",
+      },
+      imageId: {
+        type: String,
+        default: "defaultImageId/azzsdbj",
+      },
+    },
+  ],
   role: {
     type: String,
     enum: ["user", "admin"],

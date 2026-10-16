@@ -1,15 +1,31 @@
 import mongoose from "mongoose";
 import { Event } from "../models/eventModel.js";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 
 export const createEvent = async (req, res) => {
   try {
-    const { name, description, date, time, venue, maxQuantity } =
+    const { name, description, date, time, venue, maxQuantity, entryPrice } =
       req.body || {};
     const createdBy = req.user.id;
 
-    if (!name || !description || !date || !time || !venue || !maxQuantity) {
+    if (
+      !name ||
+      !description ||
+      !date ||
+      !time ||
+      !venue ||
+      !maxQuantity ||
+      !entryPrice
+    ) {
       return res.status(400).json({
         message: "Required fields can not be empty!",
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        message: "At least one image must to upload",
       });
     }
 
@@ -17,6 +33,17 @@ export const createEvent = async (req, res) => {
     if (existingEvent) {
       return res.status(400).json({
         message: "Event already exists",
+      });
+    }
+
+    const images = [];
+
+    for (let file of req.files) {
+      const result = await uploadToCloudinary(file.buffer, "EventHub/events");
+
+      images.push({
+        url: result.secure_url,
+        imageId: result.public_id,
       });
     }
 
@@ -28,9 +55,11 @@ export const createEvent = async (req, res) => {
       venue,
       maxQuantity,
       createdBy,
+      entryPrice,
+      images,
     });
-
     await event.save();
+
     return res.status(201).json({
       message: "Event created successfully",
       event,
@@ -45,7 +74,14 @@ export const createEvent = async (req, res) => {
 
 export const getAllEvents = async (req, res) => {
   try {
-    const events = await Event.find().populate("createdBy", "name email phone");
+    const { page, limit } = req.query;
+
+    let skip = (page - 1) * limit;
+
+    const events = await Event.find()
+      .populate("createdBy", "name email phone")
+      .skip(skip)
+      .limit(limit);
 
     if (events.length === 0) {
       return res.status(200).json({
@@ -130,8 +166,10 @@ export const updateEvent = async (req, res) => {
       });
     }
 
-    const { name, description, date, time, venue, maxQuantity } =
+    const { name, description, date, time, venue, maxQuantity, entryPrice } =
       req.body || {};
+
+    const hasnewFiles = req.files?.length > 0;
 
     if (maxQuantity !== undefined) {
       const capacity = Number(maxQuantity);
@@ -151,7 +189,16 @@ export const updateEvent = async (req, res) => {
       event.maxQuantity = capacity;
     }
 
-    if (!name && !description && !date && !time && !venue && !maxQuantity) {
+    if (
+      !name &&
+      !description &&
+      !date &&
+      !time &&
+      !venue &&
+      !maxQuantity &&
+      !entryPrice &&
+      !hasnewFiles
+    ) {
       return res.status(200).json({
         message: "You haven't updated anything in this data",
       });
@@ -163,6 +210,25 @@ export const updateEvent = async (req, res) => {
     if (time !== undefined) event.time = time;
     if (venue !== undefined) event.venue = venue;
     if (maxQuantity !== undefined) event.maxQuantity = maxQuantity;
+    if (entryPrice !== undefined) event.entryPrice = entryPrice;
+
+    if (req.files?.length > 0) {
+      await Promise.all(
+        event.images.map((image) => {
+          cloudinary.uploader.destroy(image.imageId);
+        }),
+      );
+      event.images = [];
+
+      for (let file of req.files) {
+        const result = await uploadToCloudinary(file.buffer, "EventHub/events");
+
+        event.images.push({
+          url: result.secure_url,
+          imageId: result.public_id,
+        });
+      }
+    }
 
     await event.save();
 
@@ -200,6 +266,12 @@ export const deleteEvent = async (req, res) => {
         message: "Event not found",
       });
     }
+
+    await Promise.all(
+      event.images.map((image) => {
+        cloudinary.uploader.destroy(image.imageId);
+      }),
+    );
 
     return res.status(200).json({
       message: "Event deleted successfully",

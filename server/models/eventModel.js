@@ -30,6 +30,16 @@ const eventSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    entryPrice: {
+      type: Number,
+      required: true,
+    },
+    images: [
+      {
+        url: String,
+        imageId: String,
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

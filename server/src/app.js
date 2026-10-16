@@ -2,9 +2,11 @@ import express from "express";
 const app = express();
 import cookiesParser from "cookie-parser";
 import cors from "cors";
+import { apiLimiter } from "../middlewares/limiter.js"
 
 app.use(express.json());
 app.use(cookiesParser());
+app.use(apiLimiter)
 app.use(
   cors({
     origin: "http://localhost:5173",

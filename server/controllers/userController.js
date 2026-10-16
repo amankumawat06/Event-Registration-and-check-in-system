@@ -5,10 +5,30 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { config } from "../config/config.js";
 import mongoose from "mongoose";
+import { uploadToCloudinary } from "../utils/uploadToCloudinary.js";
+import cloudinary from "../config/cloudinary.js";
 
 export const createUser = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, password } = req.body || {};
+
+    if (!name || !email || !phone || !password) {
+      return res.status(400).json({
+        message: "required fields can not be empty!",
+      });
+    }
+
+    if (phone.length !== 10) {
+      return res.status(400).json({
+        message: "Please enter a valid mobile number!",
+      });
+    }
+
+    if (password.length < 5) {
+      return res.status(400).json({
+        message: "Password must be at least 5 charachters!",
+      });
+    }
 
     const existingUser = await User.findOne({ $or: [{ email }, { phone }] });
     if (existingUser) {
@@ -19,10 +39,26 @@ export const createUser = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    if (phone.length != 10) {
-      return res.status(400).json({
-        message: "Please enter a valid mobile number!",
-      });
+    let image = [
+      {
+        imageUrl:
+          "https://res.cloudinary.com/dft3lgysm/image/upload/v1792118394/EventHub/Users/qhq9vggi7iatfp4zjgj0.jpg",
+        imageId: "EventHub/Users/qhq9vggi7iatfp4zjgj0",
+      },
+    ];
+
+    if (req.file) {
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "EventHub/Users",
+      );
+
+      image = [
+        {
+          imageUrl: result.secure_url,
+          imageId: result.public_id,
+        },
+      ];
     }
 
     const newUser = new User({
@@ -30,6 +66,7 @@ export const createUser = async (req, res) => {
       email,
       phone,
       password: hashedPassword,
+      image,
       role: "user",
     });
     await newUser.save();
@@ -41,6 +78,7 @@ export const createUser = async (req, res) => {
         name: newUser.name,
         email: newUser.email,
         phone: newUser.phone,
+        image: newUser.image,
         role: newUser.role,
       },
     });
@@ -203,7 +241,13 @@ export const deleteUser = async (req, res) => {
       });
     }
 
-    await Booking.deleteMany({userId: userId});
+    if (user.image[0].imageId) {
+      const deletedImage = await cloudinary.uploader.destroy(
+        user.image[0].imageId,
+      );
+    }
+
+    await Booking.deleteMany({ userId: userId });
 
     return res.status(200).json({
       message: "User and its related event data has been deleted!",
@@ -213,6 +257,74 @@ export const deleteUser = async (req, res) => {
     return res.status(500).json({
       message: "Failed to delete user",
       error: error.message,
+    });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      return res.status(400).json({
+        message: "user Id is required!",
+      });
+    }
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({
+        message: "Invalid user Id",
+      });
+    }
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        message: "user not found!",
+      });
+    }
+
+    const { name, email } = req.body || {};
+
+    if (!name && !email && !req.file) {
+      return res.status(200).json({
+        message: "You haven't updated anything in this data!",
+      });
+    }
+
+    if (name !== undefined) user.name = name;
+    if (email !== undefined) user.email = email;
+
+    if (req.file) {
+      if (user.image[0].imageId) {
+        await cloudinary.uploader.destroy(user.image[0].imageId);
+      }
+
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "EventHub/Users",
+      );
+
+      user.image = [
+        {
+          imageUrl: result.secure_url,
+          imageId: result.public_id,
+        },
+      ];
+    }
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "User data upadted successfully!",
+      updatedData: user,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: "Failed to update details!",
+      error: err.image,
     });
   }
 };
